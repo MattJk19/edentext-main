@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { xpEmbedded, xpRequest, xpNotify } from './lib/xpHost';
   import { onMount, tick as domUpdated, untrack } from 'svelte';
   import { cubicOut } from 'svelte/easing';
   import type { Content, Editor } from '@tiptap/core';
@@ -415,7 +416,8 @@
 
   // The window or tab names its document, as a word processor's title bar does.
   $effect(() => {
-    document.title = `${documentName.trim() || namePlaceholder} – EdenText`;
+    document.title = `${documentName.trim() || namePlaceholder} - ${xpEmbedded ? 'Microsoft Word 2007' : 'EdenText'}`;
+    xpNotify('title', { name: documentName.trim() || namePlaceholder, dirty });
   });
 
   function suggestedFilename(json: TiptapNode): string {
@@ -724,7 +726,7 @@
   // Word's and LibreOffice's recent-documents list; a click reopens the file itself.
   // Only a browser with the File System Access API has handles to reopen from, so
   // elsewhere the list stays empty; a startup prune drops entries whose handle is gone.
-  const fsSupported = supportsFsAccess();
+  const fsSupported = !xpEmbedded && supportsFsAccess();
   let recentFiles: RecentFile[] = $state(fsSupported ? loadRecentFiles() : []);
   if (fsSupported) void pruneRecentFiles().then((list) => (recentFiles = list));
   // With autosave off no file is recorded, so the menus offer none; Settings still clears the old list.
@@ -885,6 +887,7 @@
   function handleNew() {
     if (!editor) return;
     if (isDocNonEmpty() && !confirm(t().dialogs.confirmNew)) return;
+    xpNotify('reset');
     loadContent('<p></p>'); // onUpdate fires → autosave
     documentEpoch++;
     resetHistory();
@@ -1038,6 +1041,7 @@
       void saveEmbeddedFonts(result.fonts);
       noteEmbeddedFonts(result.fonts.map((f) => f.family));
 
+      xpNotify('reset');
       loadContent(content); // onUpdate fires → autosave
       documentEpoch++;
       zoneEpoch++;
@@ -1122,6 +1126,7 @@
         console.warn('[import] Opened file with limitations:', result.warnings, missingFonts);
         alert(t().dialogs.openedWithLimitations(warnings.join('\n• ')));
       }
+      return true;
     } catch (err) {
       busyTask = null;
       console.error('[import] Failed to open file:', err);
@@ -1201,8 +1206,46 @@
     }
   }
 
+  async function openXpFile(file: { blob: Blob; name: string; token?: string }) {
+    if (!editor || !(file.blob instanceof Blob)) return;
+    let opened = false;
+    if (/\.txt$/i.test(file.name)) {
+      if (isDocNonEmpty() && !confirm(t().dialogs.confirmReplace)) return;
+      resetDocumentState();
+      loadContent({ type: 'doc', content: (await file.blob.text()).split(/\r?\n/).map(text => ({ type: 'paragraph', content: text ? [{ type: 'text', text }] : [] })) });
+      documentName = file.name.replace(/\.txt$/i, '');
+      documentFormat = 'docx';
+      documentHasFile = false;
+      markSaved();
+      opened = true;
+    } else {
+      opened = !!(await applyImport(new Uint8Array(await file.blob.arrayBuffer()), null, file.name));
+    }
+    if (opened) xpNotify('opened', { token: file.token, name: file.name, template: /\.(ott|dotx|txt)$/i.test(file.name) });
+  }
+  $effect(() => {
+    if (!xpEmbedded || !editor) return;
+    const receive = (event: MessageEvent) => {
+      if (event.origin !== location.origin || event.source !== window.parent || event.data?.channel !== 'xp-word-2007' || event.data?.type !== 'load') return;
+      void openXpFile(event.data.file);
+    };
+    const saved = (event: Event) => {
+      const name = (event as CustomEvent<{ name: string }>).detail.name;
+      if (name) documentName = docNameOfFile(name);
+    };
+    window.addEventListener('message', receive);
+    window.addEventListener('xp-word-saved', saved);
+    xpNotify('ready');
+    return () => { window.removeEventListener('message', receive); window.removeEventListener('xp-word-saved', saved); };
+  });
+
   async function handleOpen() {
     if (!editor) return;
+    if (xpEmbedded) {
+      try { const file = await xpRequest('open'); if (file) await openXpFile(file); }
+      catch (error) { alert(error instanceof Error ? error.message : t().dialogs.couldNotOpen); }
+      return;
+    }
     if (fsSupported) {
       try {
         const r = await openOdt();
@@ -1250,6 +1293,7 @@
     exportMenuOpen = false;
     // A document with no file behind it has no format yet: ask, the way saving an
     // untitled document does everywhere else, and let Save As do the rest.
+    if (xpEmbedded && !documentHasFile) return handleSaveAs('docx');
     if (!fileHandle && !documentHasFile) { saveFormatKind = null; saveFormatOpen = true; return; }
     if (!(await ensurePassword())) return;
     const json = editor.getJSON() as TiptapNode;
@@ -1289,13 +1333,13 @@
     if (!editor) return;
     exportMenuOpen = false;
     // A download never reports the name it was saved under, so the dialog asks for it first.
-    if (!fsSupported && typedName === undefined) { saveFormatKind = kind; saveFormatOpen = true; return; }
+    if (!xpEmbedded && !fsSupported && typedName === undefined) { saveFormatKind = kind; saveFormatOpen = true; return; }
     if (typedName !== undefined) documentName = typedName;
     if (!(await ensurePassword())) return;
     const json = editor.getJSON() as TiptapNode;
     const name = kind === 'docx' ? suggestedFilenameDocx(json) : suggestedFilename(json);
     try {
-      fileHandle = await saveDocument(await buildBytes(kind, json), name, kind, null, docPassword);
+      fileHandle = await saveDocument(await buildBytes(kind, json), name, kind, null, docPassword, true);
       documentFormat = kind;
       if (fileHandle) documentName = docNameOfFile(fileHandle.name);
       recentFiles = await rememberRecentFile(fileHandle?.name ?? name, fileHandle);

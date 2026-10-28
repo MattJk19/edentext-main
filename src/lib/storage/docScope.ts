@@ -54,6 +54,8 @@ function resolve(): string {
   try {
     // The tab's own slot, unconditionally: after a reload — or a crash — it has to get
     // its document back, and nothing but this tab knows which one that was.
+    const embeddedSlot = new URLSearchParams(location.search).get('xpDoc');
+    if (window.parent !== window && embeddedSlot && /^[a-zA-Z0-9_-]{1,100}$/.test(embeddedSlot)) { mark(embeddedSlot, Date.now()); return embeddedSlot; }
     const mine = sessionStorage.getItem(TAB_KEY);
     const id = mine ?? pickSlot(markers(), Date.now());
     if (mine === null) sessionStorage.setItem(TAB_KEY, id);

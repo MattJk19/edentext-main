@@ -1,5 +1,6 @@
 import { mount } from 'svelte';
 import App from './App.svelte';
+import { xpEmbedded } from './lib/xpHost';
 import './styles/global.css';
 import './styles/office2007.css';
 import { loadTheme, applyTheme, loadAccent, applyAccent } from './lib/storage/theme';
@@ -13,9 +14,14 @@ startTabPresence();
 void pruneOldDocuments();
 
 dragDialogs();
+if (xpEmbedded) {
+    const cursors = document.createElement('link');
+    cursors.rel = 'stylesheet'; cursors.href = '/classic-cursors.css';
+    document.head.append(cursors);
+}
 
 // Apply saved theme before mount to prevent flash of wrong theme
-applyTheme(loadTheme());
+applyTheme(xpEmbedded ? 'light' : loadTheme());
 applyAccent(loadAccent());
 
 // Resolve the UI locale before mount and reflect it on <html lang> (chrome a11y)
@@ -28,7 +34,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 
 // Offline support (public/sw.js). Not in dev, where a worker would serve the cached
 // build over the one being edited.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+if (!xpEmbedded && !location.pathname.includes('/apps/word2007/') && import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
     });

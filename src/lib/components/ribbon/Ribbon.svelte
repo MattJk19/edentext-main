@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { xpEmbedded } from '../../xpHost';
   import type { Editor } from '@tiptap/core';
   import { NodeSelection } from '@tiptap/pm/state';
   import Icon from './Icon.svelte';
@@ -349,7 +350,7 @@
 </script>
 
 <div class="ribbon">
-  <div class="office-titlebar"><span>{documentName || namePlaceholder} &mdash; EdenText</span></div>
+  <div class="office-titlebar"><span>{documentName || namePlaceholder} &mdash; {xpEmbedded ? 'Microsoft Word 2007' : 'EdenText'}</span></div>
   <div class="ribbon-tabs" class:strip-only={collapsed} use:pinPanels>
     <div class="file-tab-wrap" use:clickOutside={'file'}>
       <button

@@ -2,6 +2,7 @@
 // plain browser download / no-op where the API is unavailable (Firefox/Safari).
 
 import { t } from '../i18n/i18n.svelte';
+import { xpEmbedded, xpRequest } from '../xpHost';
 
 // Shown once per browser, at the first save that goes the download route — the
 // moment the missing save dialog is actually felt.
@@ -88,8 +89,15 @@ export async function saveDocument(
   kind: Kind,
   handle: FileSystemFileHandle | null = null,
   password: string | null = null,
+  chooseLocation = false,
 ): Promise<FileSystemFileHandle | null> {
   const out = await protect(bytes, password);
+  if (xpEmbedded && (kind === 'odt' || kind === 'docx')) {
+    const result = await xpRequest('save', { bytes: out, name: suggestedName, kind, mime: FORMATS[kind].mime, saveAs: chooseLocation });
+    if (!result) throw new DOMException('Cancelled', 'AbortError');
+    window.dispatchEvent(new CustomEvent('xp-word-saved', { detail: result }));
+    return null;
+  }
   if (!supportsFsAccess()) {
     download(out, suggestedName, FORMATS[kind].mime);
     return null;
