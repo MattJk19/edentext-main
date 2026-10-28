@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # CLAUDE.md is read at every session start; detail belongs in the nested files.
+      - run: test "$(wc -l < CLAUDE.md)" -le 120 || { echo "CLAUDE.md over its 120-line budget"; exit 1; }
+      # The corpus is gitignored, so a test reading it would name a document and fail here.
+      - run: |
+          ! git grep -l "render-parity/fixtures" -- src tests ':!tests/render-parity' \
+            || { echo "a test reads the gitignored parity corpus"; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      # xmllint drives the schema-validation leg (it self-skips without it).
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
+      # LibreOffice is not installed here, so the lo-roundtrip suite self-skips
+      # (the lo-roundtrip job below runs that leg).
+      - run: npm test
+
+  # The LibreOffice legs (self-skipping everywhere soffice is absent) and the layout run,
+  # which holds the editor's page counts against LibreOffice's PDFs in Chromium.
+  lo-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # The Document Foundation's own build, pinned: Ubuntu's 24.2 drops a DOCX section
+      # opener's space above and misplaces a bookmark's end, and Launchpad's PPA goes down
+      # for hours. Its packages include Math, which builds the formula objects both
+      # importers read back; poppler-utils rasterizes the render-consistency PDFs. The
+      # libraries are what the build links against beyond a bare Ubuntu 24.04.
+      - run: >-
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-liberation poppler-utils
+          libx11-6 libx11-xcb1 libxext6 libxinerama1 libcairo2 libcups2t64 libdbus-1-3 libfontconfig1 libfreetype6 libglib2.0-0t64 libnss3
+      - env:
+          LO: 26.8.1.1
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors -o lo.tar.gz "https://downloadarchive.documentfoundation.org/libreoffice/old/$LO/deb/x86_64/LibreOffice_${LO}_Linux_x86-64_deb.tar.gz"
+          mkdir lo && tar -xzf lo.tar.gz -C lo --strip-components=1 && rm lo.tar.gz
+          sudo dpkg -i lo/DEBS/*.deb && rm -rf lo
+          sudo ln -sf /opt/libreoffice${LO%.*.*}/program/soffice /usr/local/bin/soffice
+          soffice --version
+      - run: npm ci
+      - run: npm run test:lo
+      - run: npx playwright-core install --with-deps chromium
+      - run: npm run test:layout
+
+  # Production build booted in the three engines behind the supported browsers
+  # (vite build.target). WebKit runs on macOS: its text shaping there is Safari's.
+  browser:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { browser: chromium, os: ubuntu-latest }
+          - { browser: firefox, os: ubuntu-latest }
+          - { browser: webkit, os: macos-latest }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install --with-deps ${{ matrix.browser }}
+      - run: npm run build
+      - run: npm run test:smoke
+      - run: npm run test:dom
+      # xmllint validates the files the monkey saves (macOS ships it).
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils
+      - run: npm run test:monkey
+
+  # Publishes dist/ to GitHub Pages only once every leg above is green, so a red
+  # push keeps the last good version live. Pages source must be "GitHub Actions".
+  deploy:
+    needs: [check-and-test, lo-roundtrip, browser]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    # One deploy at a time; a newer push supersedes a running one.
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - id: pages
+        uses: actions/configure-pages@v5
+      # A tab opened before this deploy still loads its build's lazy chunks by their hashed
+      # names, so each asset stays online for 30 days after the last deploy that shipped it.
+      # assets.txt lists every file under assets/ with that date.
+      - name: Keep earlier builds' assets
+        env:
+          SITE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          today=$(date -u +%F); cutoff=$(date -u -d '30 days ago' +%F)
+          ls dist/assets | sed "s/^/$today /" > new.txt
+          curl -fsS "${SITE%/}/assets.txt" -o old.txt || : > old.txt
+          while read -r day file; do
+            [[ "$file" =~ ^[A-Za-z0-9._-]+$ && ! "$day" < "$cutoff" && ! -e "dist/assets/$file" ]] || continue
+            if curl -fsS "${SITE%/}/assets/$file" -o "dist/assets/$file"; then echo "$day $file" >> new.txt; else rm -f "dist/assets/$file"; fi
+          done < old.txt
+          mv new.txt dist/assets.txt
+          echo "$(awk -v d="$today" '$1 != d' dist/assets.txt | wc -l) assets kept from earlier deploys"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

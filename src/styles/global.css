@@ -1,0 +1,837 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Liberation Serif — bundled so the editor renders the EXACT metrics of the
+   font the exported .odt uses. odf-kit emits Liberation Serif as the document
+   default, and LibreOffice ships the identical file; this keeps the on-screen
+   preview pixel-faithful to the export. (SIL Open Font License — see
+   public/font-licenses/LICENSE-LiberationFonts.txt.) */
+@font-face {
+  font-family: 'Liberation Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSerif-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Serif';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSerif-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSerif-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Serif';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSerif-BoldItalic.ttf') format('truetype');
+}
+
+/* Liberation Sans under its own name too: import maps a document's Arial to it
+   (screenFontName), so a run carries the bare family and a machine without the
+   font installed would set an Arial page in the fallback serif. */
+@font-face {
+  font-family: 'Liberation Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSans-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSans-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSans-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Liberation Sans';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/LiberationSans-BoldItalic.ttf') format('truetype');
+}
+
+/* Bullet-marker symbols Liberation Serif lacks (❖ ➢ ⇨ ✓ ▸ ◆), subset from DejaVu
+   Sans so markers render compact and identical on every platform. First in the
+   ::marker/picker stacks; per-glyph fallback keeps all other chars in the text
+   font. (Bitstream Vera license — see public/font-licenses/LICENSE-DejaVu.txt.) */
+@font-face {
+  font-family: 'EdenText Symbols';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/EdenSymbols.woff2') format('woff2');
+}
+
+/* A space at half the font size, what a document balancing single- and double-byte
+   widths sets (storage/balanceSpaces.ts): Liberation Serif's space with a 0.5em advance,
+   so the line keeps its metrics. (SIL Open Font License, as Liberation.) */
+@font-face {
+  font-family: 'EdenText Space';
+  font-style: normal;
+  font-weight: 1 1000;
+  font-display: block;
+  src: url('../assets/fonts/EdenSpace.woff2') format('woff2');
+  unicode-range: U+20;
+}
+
+/* Liberation Serif's quotation marks set full width, as a Chinese face's are: what a run
+   whose western font is one sets them in where that font is missing (westNames). */
+@font-face {
+  font-family: 'EdenText Quotes';
+  font-style: normal;
+  font-weight: 1 1000;
+  font-display: block;
+  src: url('../assets/fonts/EdenQuotes.woff2') format('woff2');
+  unicode-range: U+2018-2019, U+201C-201D;
+}
+
+/* STIX Two Math — a font with an OpenType MATH table is what makes MathML typeset:
+   without one Chromium drops ∑ and ϕ entirely and leaves brackets glyph-height next
+   to a fraction. Word uses Cambria Math for the same job. (OFL — see
+   public/font-licenses/LICENSE-STIX.txt.) */
+@font-face {
+  font-family: 'STIX Two Math';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('STIX Two Math'), url('../assets/fonts/STIXTwoMath-Regular.woff2') format('woff2');
+}
+
+/* Metric-compatible substitutes for the common MS-Office fonts that imported
+   .odt files reference. Each face is keyed to the MS name but prefers a real
+   local copy, then a system twin, then the bundled open-source twin — so text
+   renders with matching metrics (like LibreOffice) instead of dropping to the
+   browser's default serif. (OFL — see public/font-licenses/LICENSE-*.) */
+
+/* Calibri → Carlito */
+@font-face {
+  font-family: 'Calibri';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Calibri'), local('Carlito'), url('../assets/fonts/Carlito-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Calibri';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Calibri Bold'), local('Carlito Bold'), url('../assets/fonts/Carlito-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Calibri';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Calibri Italic'), local('Carlito Italic'), url('../assets/fonts/Carlito-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Calibri';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Calibri Bold Italic'), local('Carlito Bold Italic'), url('../assets/fonts/Carlito-BoldItalic.ttf') format('truetype');
+}
+
+/* Calibri Light → Carlito. Word's default theme heading font; Carlito has no light
+   cut, so LibreOffice renders it with the regular one too. */
+@font-face {
+  font-family: 'Calibri Light';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Calibri Light'), local('Carlito'), url('../assets/fonts/Carlito-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Calibri Light';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Calibri Light'), local('Carlito Bold'), url('../assets/fonts/Carlito-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Calibri Light';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Calibri Light Italic'), local('Carlito Italic'), url('../assets/fonts/Carlito-Italic.ttf') format('truetype');
+}
+
+/* Arial → Liberation Sans */
+@font-face {
+  font-family: 'Arial';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Arial'), local('Liberation Sans'), url('../assets/fonts/LiberationSans-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Arial';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Arial Bold'), local('Liberation Sans Bold'), url('../assets/fonts/LiberationSans-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Arial';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Arial Italic'), local('Liberation Sans Italic'), url('../assets/fonts/LiberationSans-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Arial';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Arial Bold Italic'), local('Liberation Sans Bold Italic'), url('../assets/fonts/LiberationSans-BoldItalic.ttf') format('truetype');
+}
+
+/* Cambria → Caladea */
+@font-face {
+  font-family: 'Cambria';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Cambria'), local('Caladea'), url('../assets/fonts/Caladea-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Cambria';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Cambria Bold'), local('Caladea Bold'), url('../assets/fonts/Caladea-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Cambria';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Cambria Italic'), local('Caladea Italic'), url('../assets/fonts/Caladea-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Cambria';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Cambria Bold Italic'), local('Caladea Bold Italic'), url('../assets/fonts/Caladea-BoldItalic.ttf') format('truetype');
+}
+
+/* Courier New → Liberation Mono */
+@font-face {
+  font-family: 'Courier New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Courier New'), local('Liberation Mono'), url('../assets/fonts/LiberationMono-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Courier New';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Courier New Bold'), local('Liberation Mono Bold'), url('../assets/fonts/LiberationMono-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Courier New';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Courier New Italic'), local('Liberation Mono Italic'), url('../assets/fonts/LiberationMono-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Courier New';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Courier New Bold Italic'), local('Liberation Mono Bold Italic'), url('../assets/fonts/LiberationMono-BoldItalic.ttf') format('truetype');
+}
+
+/* Times New Roman → Liberation Serif (reuses the bundled Serif files) */
+@font-face {
+  font-family: 'Times New Roman';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Times New Roman'), local('Liberation Serif'), url('../assets/fonts/LiberationSerif-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Times New Roman';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Times New Roman Bold'), local('Liberation Serif Bold'), url('../assets/fonts/LiberationSerif-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Times New Roman';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Times New Roman Italic'), local('Liberation Serif Italic'), url('../assets/fonts/LiberationSerif-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Times New Roman';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Times New Roman Bold Italic'), local('Liberation Serif Bold Italic'), url('../assets/fonts/LiberationSerif-BoldItalic.ttf') format('truetype');
+}
+
+:root {
+  --radius: 6px;
+    --island-radius: 14px; /* corner radius of the floating toolbar card */
+    --toolbar-btn-size: 1.7rem; /* height of all toolbar controls (matches the floating toolbars) */
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-serif: 'Liberation Serif', 'Times New Roman', Georgia, serif;
+    /* Headings are sans, like LibreOffice's Heading style ('Arial' is the bundled
+       Liberation Sans; see HEADING_FONT in export/odt.ts). */
+    --font-heading: 'Arial', 'Liberation Sans', sans-serif;
+    /* The logo's two colours (favicon.svg: the slate stem, the clay leaf), one source of truth for
+       both chromes. The gradient is the app's signature (island hairline). */
+    --brand-slate: #4c6c8a;
+    --brand-clay: #d1734f;
+    --accent-warm: var(--brand-clay);
+    --brand-gradient: linear-gradient(90deg, var(--color-primary), var(--accent-warm));
+  }
+
+/* The ribbon's palette: Word's own greys, our own accent — the logo's slate, which
+   carries white and clears 4.5:1 on the chrome. Its own token set rather than the
+   app's, so the two chromes can look nothing alike while sharing a theme. */
+:root {
+  --w-accent: var(--brand-slate);
+  --w-accent-dark: #3a5570;
+  --w-accent-fill: var(--brand-slate);
+  --w-accent-fill-open: #3a5570;
+  /* The logo's other colour, on the tabs that only exist for the selected object.
+     Darkened for the label; the bar above it takes the brand tone itself. */
+  --w-contextual: #a85a3a;
+  --w-chrome: #ffffff;
+  --w-surface: #ffffff;
+  --w-border: #e3e6ea;
+  --w-border-strong: #d9d9d9;
+  --w-text: #242424;
+  --w-text-dim: #605e5c;
+  --w-text-tertiary: #909499;
+  --w-hover: #f3f2f1;
+  --w-pressed: #edebe9;
+  --w-active: #e2e0de;
+  --w-accent-soft: #eaeff4;
+  --w-menu-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  --w-font: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  /* Body height: three control rows plus the group-label row, and a big button's
+     label may take two of them. A tuning knob. */
+  --w-ribbon-h: 84px;
+}
+
+/* Word's dark mode: the Fluent dark neutrals, and both brand tones lightened
+   because they are unreadable on a dark chrome. Only the colours flip — every
+   metric above holds, so the two modes are the same ribbon. */
+[data-theme='dark'], [data-theme='allBlack'] {
+  --w-accent: #8fb3cd;
+  --w-accent-dark: #6e93b0;
+  --w-accent-fill: #3c586f;
+  --w-accent-fill-open: #4c6c8a;
+  --w-contextual: #e2916f;
+  --w-chrome: #1f1f1f;
+  --w-surface: #292929;
+  --w-border: #383838;
+  --w-border-strong: #4a4a4a;
+  --w-text: #ffffff;
+  --w-text-dim: #c8c6c4;
+  --w-text-tertiary: #8a8886;
+  --w-hover: #3d3d3d;
+  --w-pressed: #333333;
+  --w-active: #4a4a4a;
+  --w-accent-soft: #2b3b49;
+  --w-menu-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+/* AllBlack darkens the canvas past dark, so the ribbon follows with Word's Black
+   theme rather than sitting a shade lighter than the page behind it. */
+[data-theme='allBlack'] {
+  --w-chrome: #0f0f0f;
+  --w-surface: #1a1a1a;
+  --w-border: #2b2b2b;
+  --w-border-strong: #3d3d3d;
+  --w-hover: #2e2e2e;
+  --w-pressed: #262626;
+  --w-active: #3d3d3d;
+  --w-accent-soft: #212e39;
+}
+
+/* A picked accent replaces the logo's slate (`storage/theme.ts`); the ribbon's shades
+   are then mixed from it, as the hand-tuned ones above are for the slate. 'slate'
+   itself only ever names a swatch in Settings. */
+[data-accent='slate'] { --brand-slate: #4c6c8a; }
+[data-accent='blue'] { --brand-slate: #2f6aa8; }
+[data-accent='teal'] { --brand-slate: #2f7472; }
+[data-accent='green'] { --brand-slate: #4d7a52; }
+[data-accent='violet'] { --brand-slate: #6a5a92; }
+[data-accent='berry'] { --brand-slate: #8f4a6a; }
+[data-accent='graphite'] { --brand-slate: #5c6168; }
+[data-accent] {
+  --w-accent-dark: color-mix(in srgb, var(--brand-slate) 78%, black);
+  --w-accent-fill-open: var(--w-accent-dark);
+  --w-accent-soft: color-mix(in srgb, var(--brand-slate) 12%, white);
+}
+[data-accent]:is([data-theme='dark'], [data-theme='allBlack']) {
+  --w-accent: color-mix(in srgb, var(--brand-slate) 55%, white);
+  --w-accent-dark: color-mix(in srgb, var(--brand-slate) 75%, white);
+  --w-accent-fill: color-mix(in srgb, var(--brand-slate) 80%, black);
+  --w-accent-fill-open: var(--brand-slate);
+  --w-accent-soft: color-mix(in srgb, var(--brand-slate) 35%, var(--w-chrome));
+}
+
+/* A transform animation: Chromium runs it off the main thread, so it keeps turning
+   while a long synchronous step blocks everything else. */
+.spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: busy-spin 0.8s linear infinite;
+}
+
+@keyframes busy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Signature micro-interactions, shared across all toolbar components. */
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-5px); }
+}
+
+.toolbar-region button:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.theme-dropdown, .ol-dropdown, .align-dropdown, .font-dropdown, .size-dropdown,
+.color-dropdown, .char-dropdown, .history-dropdown, .layout-dropdown,
+.lh-dropdown, .sp-dropdown, .table-dropdown, .bp-dropdown, .ribbon-menu {
+  animation: menu-in 0.14s ease;
+}
+
+/* The ribbon's dropdown panel and its rows. Global because the panel renders its
+   contents from a caller's snippet, which Svelte scopes to that caller. */
+/* `anchored` (menu.svelte.ts) switches this to position: fixed and pins it under
+   the trigger — the ribbon band clips its own overflow, so a panel has to leave
+   the flow to be seen. z-index clears the modern island (200) and the editor's
+   own overlays. */
+.ribbon-menu {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  background: var(--w-surface);
+  border: 1px solid var(--w-border-strong);
+  border-radius: 6px;
+  box-shadow: var(--w-menu-shadow);
+  font-family: var(--w-font);
+  /* Rows that are not buttons (labels, checkbox and number rows) would otherwise
+     inherit the page font size and dwarf the button rows. */
+  font-size: 13px;
+  color: var(--w-text);
+  /* `anchored` keeps 8px to either window edge; a phone is narrower than a menu. */
+  max-width: calc(100vw - 16px);
+}
+
+.ribbon-menu.right { left: auto; right: 0; }
+
+.ribbon-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  color: var(--w-text);
+  font-family: var(--w-font);
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ribbon-menu button svg { flex-shrink: 0; }
+.ribbon-menu button:hover:not(:disabled) { background: var(--w-hover); }
+.ribbon-menu button:disabled { color: var(--w-text-tertiary); cursor: default; }
+.ribbon-menu button.selected { background: var(--w-active); }
+
+/* Both trail the row's label: the shortcut hint and the secondary description
+   Word puts at the right edge of a menu entry. */
+.ribbon-menu .menu-key,
+.ribbon-menu .menu-sub { margin-left: auto; padding-left: 16px; color: var(--w-text-dim); }
+.ribbon-menu .menu-key { font-size: 12px; }
+
+/* A checkable row keeps the slot whether it is checked or not, so the labels line up. */
+.ribbon-menu .menu-check {
+  flex: none;
+  width: 14px;
+  color: var(--w-accent);
+}
+/* Wraps only when the menu hits its max-width; otherwise it sizes to the unwrapped text. */
+.ribbon-menu .menu-sub { font-size: 11px; white-space: normal; text-align: right; }
+
+/* Section label above a run of rows, and the sticky action row below the list. */
+.ribbon-menu .rb-menu-label {
+  padding: 6px 12px 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--w-text-tertiary);
+  user-select: none;
+}
+
+.ribbon-menu .rb-menu-foot {
+  flex-shrink: 0;
+  margin: 4px -5px -5px;
+  width: auto;
+  border-top: 1px solid var(--w-border);
+  border-radius: 0 0 5px 5px;
+  font-weight: 600;
+  color: var(--w-accent);
+}
+
+/* Between two ribbon groups, and between two runs of buttons inside one. */
+.ribbon-sep {
+  width: 1px;
+  flex-shrink: 0;
+  background: var(--w-border);
+  margin: 2px 6px;
+}
+
+.rb-mini-sep {
+  width: 1px;
+  height: 20px;
+  flex-shrink: 0;
+  background: var(--w-border);
+  margin: 0 4px;
+}
+
+/* The reused pickers style their trigger for the modern toolbar's tinted island:
+   a frame on hover, the accent as the open state. Beside a row of ribbon buttons
+   that reads as a different control, so both become the ribbon's own tints. */
+.ribbon .table-trigger:hover,
+.ribbon .char-trigger:hover,
+.ribbon .dt-trigger:hover,
+.ribbon .tsp-trigger:hover,
+.ribbon .bp-trigger:hover { border-color: transparent; }
+
+.ribbon .table-trigger[aria-pressed='true'],
+.ribbon .char-trigger[aria-pressed='true'],
+.ribbon .dt-trigger[aria-pressed='true'],
+.ribbon .tsp-trigger[aria-pressed='true'],
+.ribbon .bp-trigger[aria-pressed='true'] {
+  background: var(--w-active);
+  color: var(--w-text);
+}
+
+/* A picker standing alone in a group is a labelled button, so its own compact
+   trigger grows to the big variant's box and icon size. The stroke is pinned to
+   the same 1.5px the ribbon's own icons paint at 28px. */
+/* Marks a reused control for the command search without adding a box around it. */
+.rb-cmd { display: contents; }
+
+.rb-captioned {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 6px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  --toolbar-btn-size: 32px;
+}
+
+/* Mirrors .rb-big's box, down to the slot it holds open for a caret, so a picker
+   and a labelled button in the same row put their glyph and their words on one
+   line. Their triggers carry their own frame and padding, which is dropped. */
+/* A picker root is a block, so its inline-flex trigger would sit on a text
+   baseline and carry the descender gap with it. */
+.rb-captioned > * { display: flex; }
+
+.rb-captioned :is(.table-trigger, .char-trigger, .dt-trigger, .tsp-trigger, .bp-trigger, .lang-picker, .shape-btn) {
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  margin: 0;
+}
+
+.rb-captioned::after {
+  content: '';
+  display: block;
+  height: 8px;
+  margin-top: -3px;
+}
+
+/* The trigger lives in the picker's own component, so the tint goes on the wrapper
+   instead — glyph and caption light up together, as they do on a ribbon button.
+   `captionClicks` gives the caption the click to match. */
+.rb-captioned:hover { background: var(--w-hover); }
+.rb-captioned:hover :is(.table-trigger, .char-trigger, .dt-trigger, .tsp-trigger, .bp-trigger, .color-split) {
+  background: none;
+}
+
+/* The first svg is the glyph; a second one is the trigger's own caret and keeps
+   the size every other caret in the ribbon has. */
+.rb-captioned > * > button > svg:first-of-type { width: 28px; height: 28px; }
+.rb-captioned > * > button > svg:first-of-type :is(path, rect, line, circle, polyline) { stroke-width: 0.86; }
+.rb-captioned .color-bar { width: 24px; }
+
+/* The spell-check picker is chromeless for the status bar; in a group it needs
+   the combo frame and the same box as the labelled buttons beside it. */
+.rb-captioned .lang-picker {
+  padding: 0 6px;
+  border: 1px solid var(--w-border-strong);
+  border-radius: 3px;
+  background: var(--w-surface);
+}
+
+.rb-captioned .lang-picker:hover,
+.rb-captioned .lang-picker:focus-within { border-color: var(--w-accent); }
+
+.rb-caption {
+  font-family: var(--w-font);
+  font-size: 12px;
+  line-height: 14px;
+  color: var(--w-text);
+  white-space: nowrap;
+}
+
+/* Combo box: a borderless input welded to a caret button, as in Word's font and
+   size fields. */
+.rb-combo-wrap { position: relative; }
+
+.rb-combo {
+  display: flex;
+  align-items: stretch;
+  height: 30px;
+  border: 1px solid var(--w-border-strong);
+  border-radius: 3px;
+  background: var(--w-surface);
+  overflow: hidden;
+}
+
+.rb-combo:hover,
+.rb-combo:focus-within { border-color: var(--w-accent); }
+
+.rb-combo-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0 4px;
+  color: var(--w-text);
+  font-family: var(--w-font);
+  font-size: 12px;
+}
+
+.rb-combo-input:focus { outline: none; }
+
+.rb-combo-caret {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  border: none;
+  border-left: 1px solid var(--w-border);
+  background: none;
+  color: var(--w-text-dim);
+  cursor: pointer;
+}
+
+.rb-combo-caret:hover { background: var(--w-hover); }
+.ribbon-menu hr { border: none; border-top: 1px solid var(--w-border); margin: 4px 2px; }
+
+/* Scrolling body of a popup menu. Only this inner box scrolls; the panel keeps
+   the background and frame, so the elastic overscroll bounce can't drag the
+   background off the border and show the page through the gap. */
+.menu-scroll {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar-region button:active:not(:disabled) { transform: none; }
+  .theme-dropdown, .ol-dropdown, .align-dropdown, .font-dropdown, .size-dropdown,
+  .color-dropdown, .char-dropdown, .history-dropdown, .layout-dropdown,
+  .lh-dropdown, .sp-dropdown, .table-dropdown, .bp-dropdown, .ribbon-menu { animation: none; }
+}
+
+  [data-theme="light"] {
+  --color-bg: #e6e9eb;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-muted: #94a3b8;
+  --color-primary: var(--brand-slate);
+  --color-toolbar-bg: #ffffff;
+  --color-btn-hover: #cbd5e1;
+  --color-page-bg: #ffffff;
+  /* The sheet is the document, so its text is the black LibreOffice and Word draw —
+     the app's own slate would differ from a run the file colours #000000. */
+  --color-page-text: #000000;
+  --color-page-border: #e2e8f0;
+  --scrollbar-thumb: #cbd5e1;
+  }
+
+  [data-theme="dark"] {
+    --color-bg: #2f2f31;
+    --color-surface: #161b22;
+    --color-border: #30363d;
+    --color-text: #f2e6f3;
+    --color-text-muted: #7d8590;
+    --color-primary: var(--brand-slate);
+    --color-toolbar-bg: #161b22;
+    --color-btn-hover: #3b4350;
+    --color-page-bg: #ffffff;
+    --color-page-text: #000000;
+    --color-page-border: #e2e8f0;
+    /* Primary (active-button color) so the toolbar scrollbar stands out on dark. */
+    --scrollbar-thumb: var(--color-primary);
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--color-primary) 75%, white);
+}
+
+[data-theme="allBlack"] {
+  --color-bg: #0d1117;
+  --color-surface: #161b22;
+  --color-border: #30363d;
+  --color-text: #e6edf3;
+  --color-text-muted: #7d8590;
+  --color-primary: var(--brand-slate);
+  --color-toolbar-bg: #161b22;
+  --color-btn-hover: #3b4350;
+  --color-page-bg: #161b22;
+  --color-page-text: #e6edf3;
+  --color-page-border: #30363d;
+  --scrollbar-thumb: var(--color-primary);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--color-primary) 75%, white);
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The browser paints a popover in its own CanvasText, black whatever the theme; a menu
+   lifted into the top layer takes the colour of the control it opens from instead. */
+:where([popover]) {
+  color: inherit;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The native arrow ignores padding and hugs the border, so draw an inset chevron. The
+   !important beats the background and padding shorthands the dialogs give their selects. */
+select:not([multiple], [size], .bare) {
+  appearance: none;
+  padding-inline-end: 22px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b95a5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 7px center !important;
+}
+
+/* Some systems draw the open list in their own scheme (dark under a dark GTK theme),
+   so a select that leaves its colours transparent or system-picked turns illegible. */
+optgroup, option {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+/* Every window takes the ribbon's palette wherever it is mounted: tokens inherit,
+   so one under .ribbon and one under the app shell would otherwise differ. */
+dialog, [popover][role='dialog'] {
+  --color-surface: var(--w-surface);
+  --color-toolbar-bg: var(--w-surface);
+  --color-border: var(--w-border);
+  --color-text: var(--w-text);
+  --color-text-muted: var(--w-text-dim);
+  --color-primary: var(--w-accent-fill);
+  --color-btn-hover: var(--w-hover);
+  --font-sans: var(--w-font);
+  --radius: 6px;
+}
+
+/* Docked side panes and the ruler too, on the chrome colour the ribbon and status bar share. */
+.ai-pane, .navigator-pane, .comments-pane, .revisions-pane, .ruler {
+  --color-surface: var(--w-chrome);
+  --color-toolbar-bg: var(--w-chrome);
+  --color-border: var(--w-border);
+  --color-text: var(--w-text);
+  --color-text-muted: var(--w-text-dim);
+  --color-primary: var(--w-accent-fill);
+  --color-btn-hover: var(--w-hover);
+  --font-sans: var(--w-font);
+}
+
+/* One frame for every modal window; components set only size and layout. */
+dialog {
+  /* The global reset zeroes every margin, which also takes the auto centring. */
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--w-border-strong);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-sans);
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
+
+/* A modal dialog moves by its title (utils/dragWindow.ts). */
+dialog h2 { cursor: move; user-select: none; touch-action: none; }
+
+/* On a phone every dialog's fixed desktop width gives way to the screen's; the
+   dialog itself is capped there already and scrolls when taller. */
+@media (max-width: 600px) {
+  dialog > :not(.close) { width: auto !important; min-width: 0 !important; max-width: calc(100vw - 2em) !important; }
+}
