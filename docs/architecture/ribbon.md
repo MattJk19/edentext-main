@@ -21,6 +21,10 @@ helper would improve both, the ribbon takes it and the modern chrome keeps its c
 mounted inside `ToolbarExpanded`, the ribbon mounts its own rather than hoisting it. Only one
 chrome is mounted at a time, so the two sets never coexist.
 
+## Classic light appearance
+
+`styles/office2007.css` supplies the light ribbon with blue gradients, framed tabs, golden command states, a document title strip and a matching status bar; dark themes retain their own palette.
+
 ## Palette
 
 Word's greys live in `--w-*` in `global.css` — its own token set, not the app's, so the two

@@ -349,6 +349,7 @@
 </script>
 
 <div class="ribbon">
+  <div class="office-titlebar"><span>{documentName || namePlaceholder} &mdash; EdenText</span></div>
   <div class="ribbon-tabs" class:strip-only={collapsed} use:pinPanels>
     <div class="file-tab-wrap" use:clickOutside={'file'}>
       <button
